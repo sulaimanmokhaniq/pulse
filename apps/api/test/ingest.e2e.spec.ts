@@ -6,19 +6,11 @@ import { Pool } from 'pg';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { configureApp } from '../src/bootstrap';
-import { AppConfig } from '../src/config';
 import { runMigrations } from '../src/db/migrate';
 import { seedProject } from '../src/db/seed';
+import { testConfig } from './test-config';
 
-const config: AppConfig = {
-  port: 0,
-  databaseUrl: process.env.DATABASE_URL ?? 'postgres://postgres@localhost:5432/pulse_test',
-  redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379/15',
-  streamKey: `pulse:test:${randomUUID()}`,
-  streamMaxLen: 1000,
-  rateLimitPerMinute: 5,
-  maxBodyBytes: '512kb',
-};
+const config = testConfig({ rateLimitPerMinute: 5 });
 
 function trackEvent(overrides: Record<string, unknown> = {}) {
   return {

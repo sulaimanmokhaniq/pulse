@@ -3,21 +3,23 @@
 Product analytics and feature flags for mobile and web apps. Flutter-first,
 Arabic-ready, built to host data in Saudi Arabia.
 
-> Status: Phase 1 in progress. The ingestion API is in place; the worker,
-> Dart SDK and trends dashboard are next.
+> Status: Phase 1 in progress. Ingestion and storage are done; the Dart SDK
+> and trends dashboard are next.
 
 ## Architecture (Phase 1)
 
 ```
-Flutter app ──▶ Dart SDK ──HTTP batch──▶ Ingestion API ──XADD──▶ Redis Stream ──▶ Worker ──▶ PostgreSQL ──▶ Dashboard
-               (batching,              (API-key auth,                           (step 2)    (partitioned    (Next.js,
-                offline queue)          validation, rate limit)                              events table)   step 4)
+Flutter app ──▶ Dart SDK ──HTTP batch──▶ Ingestion API ──XADD──▶ Redis Stream ──▶ Worker ──────▶ PostgreSQL ──▶ Dashboard
+               (batching,              (API-key auth,                           (consumer     (partitioned    (Next.js,
+                offline queue)          validation, rate limit)                  group, dedup) events, daily   step 4)
+                                                                                               rollups)
 ```
 
 The API never writes events to the database directly. It validates and
 enqueues, then returns `202`. Bursts and short database outages don't slow
-clients down, and the SDK can retry safely because every event carries a
-`messageId`.
+clients down. A worker drains the stream in batches and commits events,
+person profiles and daily rollups in one transaction before acking. Every
+event carries a `messageId`, so SDK retries and redeliveries are stored once.
 
 | Path | What it is |
 | --- | --- |
@@ -89,8 +91,25 @@ too large, `429` rate limited (per API key).
 - **`project_id` everywhere.** Phase 1 runs a single project, but every
   table and key is already scoped, so multi-project support needs no
   migration.
+- **Exactly-once storage on an at-least-once queue.** A message is acked only
+  after its batch commits, so nothing is lost if the worker crashes;
+  stale pending messages are reclaimed with `XAUTOCLAIM`. Duplicates are
+  dropped by an `event_ids` ledger in the same transaction, and rollups count
+  only newly inserted rows.
+- **Rollups for charts.** `daily_event_counts` is maintained on write, so the
+  trends chart reads a few hundred rows instead of scanning raw events.
+- **Bad data doesn't block the queue.** Malformed messages go to a
+  dead-letter stream. Timestamps more than a year old or a day ahead are
+  clamped to the receive time, with the original kept in properties.
+- **Cheap when idle.** The worker backs off to one poll every 30s while idle,
+  and the API nudges it when events arrive, so latency stays under a second
+  without spending the free Redis command quota.
 - **12-factor config.** All connections come from env vars, so the same
   Docker image runs locally, on free hosting, or on a KSA VPS.
+
+## Deploy
+
+Free tier on Render, Neon and Upstash: see [docs/deploy.md](docs/deploy.md).
 
 ## Development
 
@@ -104,7 +123,7 @@ npm test               # unit and e2e tests (needs Postgres and Redis)
 ## Roadmap
 
 1. ✅ Ingestion API, schema, CI
-2. Worker and storage, deploy (Render, Neon, Upstash; all free tier)
+2. ✅ Worker and storage; free-tier deploy config (Render, Neon, Upstash)
 3. Dart SDK (`track`, `identify`, batching, offline queue) and demo shop
 4. Trends chart (Next.js on Vercel)
 

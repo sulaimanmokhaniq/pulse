@@ -55,4 +55,30 @@ export const migrations: Migration[] = [
       );
     `,
   },
+  {
+    id: '002_rollups',
+    sql: `
+      -- Pre-aggregated daily counts (UTC) so trend charts don't scan raw events.
+      CREATE TABLE daily_event_counts (
+        project_id  uuid NOT NULL,
+        day         date NOT NULL,
+        event       text NOT NULL,
+        count       bigint NOT NULL,
+        PRIMARY KEY (project_id, event, day)
+      );
+
+      -- Dedup ledger. events can't have a unique key on message_id alone
+      -- (partitioned tables need the partition key in every unique index), and
+      -- a retried event can arrive with a slightly different skew-corrected
+      -- timestamp, so idempotency is enforced here instead.
+      CREATE TABLE event_ids (
+        project_id   uuid NOT NULL,
+        message_id   uuid NOT NULL,
+        received_at  timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (project_id, message_id)
+      );
+
+      CREATE INDEX persons_project_user_idx ON persons (project_id, user_id) WHERE user_id IS NOT NULL;
+    `,
+  },
 ];

@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { APP_CONFIG, AppConfig } from '../config';
 import { REDIS } from '../redis/redis.module';
+import { WorkerSignal } from '../worker/worker-signal';
 import { BatchDto, EventDto, EventType } from './batch.dto';
 
 export interface QueuedEvent {
@@ -48,6 +49,7 @@ export class IngestService {
   constructor(
     @Inject(REDIS) private readonly redis: Redis,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
+    private readonly workerSignal: WorkerSignal,
   ) {}
 
   // The API only enqueues; a worker persists events. This keeps response times
@@ -62,6 +64,7 @@ export class IngestService {
     const results = await pipeline.exec();
     const failed = results?.find(([err]) => err);
     if (failed) throw failed[0];
+    this.workerSignal.notify();
     return body.batch.length;
   }
 }

@@ -1,0 +1,23 @@
+# Render Blueprint: free web service running the API and the in-process worker.
+# Postgres (Neon) and Redis (Upstash) are external; paste their URLs when prompted.
+services:
+  - type: web
+    name: pulse-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerContext: ./apps/api
+    dockerfilePath: ./apps/api/Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: SEED_API_KEY
+        sync: false
+      - key: SEED_PROJECT_NAME
+        value: Demo Shop
+      - key: WORKER_MAX_IDLE_POLL_MS
+        value: "30000"

@@ -1,3 +1,5 @@
+import { hostname } from 'os';
+
 export interface AppConfig {
   port: number;
   databaseUrl: string;
@@ -6,6 +8,18 @@ export interface AppConfig {
   streamMaxLen: number;
   rateLimitPerMinute: number;
   maxBodyBytes: string;
+  worker: WorkerConfig;
+}
+
+export interface WorkerConfig {
+  enabled: boolean;
+  group: string;
+  consumer: string;
+  batchSize: number;
+  pollMs: number;
+  maxIdlePollMs: number;
+  claimIdleMs: number;
+  deadLetterKey: string;
 }
 
 function required(name: string): string {
@@ -24,6 +38,20 @@ export function loadConfig(): AppConfig {
     streamMaxLen: Number(process.env.STREAM_MAXLEN ?? 100_000),
     rateLimitPerMinute: Number(process.env.RATE_LIMIT_PER_MINUTE ?? 600),
     maxBodyBytes: process.env.MAX_BODY_BYTES ?? '512kb',
+    worker: {
+      // Runs inside the API process by default so a single free web service is enough.
+      enabled: (process.env.WORKER_ENABLED ?? 'true') !== 'false',
+      group: process.env.WORKER_GROUP ?? 'pulse-workers',
+      consumer: process.env.WORKER_CONSUMER ?? `${hostname()}-${process.pid}`,
+      batchSize: Number(process.env.WORKER_BATCH_SIZE ?? 500),
+      // Poll interval while busy; doubles while idle up to maxIdlePollMs, which
+      // keeps command counts low on metered Redis such as Upstash.
+      pollMs: Number(process.env.WORKER_POLL_MS ?? 1000),
+      maxIdlePollMs: Number(process.env.WORKER_MAX_IDLE_POLL_MS ?? 30_000),
+      // Messages unacked this long are assumed orphaned by a crashed consumer.
+      claimIdleMs: Number(process.env.WORKER_CLAIM_IDLE_MS ?? 60_000),
+      deadLetterKey: process.env.DEAD_LETTER_KEY ?? 'pulse:events:dead',
+    },
   };
 }
 
