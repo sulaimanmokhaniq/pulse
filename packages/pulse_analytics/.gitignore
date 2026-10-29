@@ -1,0 +1,4 @@
+.dart_tool/
+.pulse/
+pubspec.lock
+build/

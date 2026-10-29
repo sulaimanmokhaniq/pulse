@@ -48,3 +48,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build apps/api
+
+  dart-sdk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: packages/pulse_analytics
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+      - run: dart pub get
+      - run: dart format --output=none --set-exit-if-changed --line-length 120 .
+      - run: dart analyze --fatal-infos
+      - run: dart test
+
+  demo-shop:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: examples/demo_shop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test

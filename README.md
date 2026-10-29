@@ -5,8 +5,8 @@ Arabic-ready, built to host data in Saudi Arabia.
 
 > **Live API:** [pulse-api-udhc.onrender.com/health](https://pulse-api-udhc.onrender.com/health) (free tier; the first request may take up to a minute)
 >
-> Status: Phase 1 in progress. Ingestion and storage are done; the Dart SDK
-> and trends dashboard are next.
+> Status: Phase 1 in progress. Ingestion, storage and the Dart SDK are done;
+> the trends dashboard is next.
 
 ## Architecture (Phase 1)
 
@@ -26,9 +26,23 @@ event carries a `messageId`, so SDK retries and redeliveries are stored once.
 | Path | What it is |
 | --- | --- |
 | `apps/api` | NestJS ingestion API (TypeScript) |
-| `packages/pulse_dart` | Dart/Flutter SDK (step 3) |
+| `packages/pulse_analytics` | Dart/Flutter SDK ([README](packages/pulse_analytics/README.md)) |
+| `examples/demo_shop` | Flutter demo shop that uses the SDK ([README](examples/demo_shop/README.md)) |
 | `apps/dashboard` | Next.js dashboard (step 4) |
-| `examples/demo_shop` | Flutter demo app that uses the SDK (step 3) |
+
+## Quick look: the SDK
+
+```dart
+final pulse = await Pulse.init(PulseConfig(apiKey: 'pk_...', host: 'https://...'));
+pulse.track('product_viewed', properties: {'productId': 'sku-1'});
+pulse.identify('user-42', traits: {'plan': 'pro'});
+```
+
+Events are batched, persisted to disk while offline, and retried with
+backoff. Every event carries a `messageId`, so the server stores it exactly
+once however many times it's sent.
+
+![Demo Shop](docs/demo-shop.png)
 
 ## Run it locally
 
@@ -126,7 +140,7 @@ npm test               # unit and e2e tests (needs Postgres and Redis)
 
 1. ✅ Ingestion API, schema, CI
 2. ✅ Worker and storage, deployed on free tiers (Render, Neon, Upstash)
-3. Dart SDK (`track`, `identify`, batching, offline queue) and demo shop
+3. ✅ Dart SDK (`track`, `identify`, batching, offline queue) and demo shop
 4. Trends chart (Next.js on Vercel)
 
 Later: funnels, retention, feature flags, A/B experiments, Arabic/RTL dashboard.

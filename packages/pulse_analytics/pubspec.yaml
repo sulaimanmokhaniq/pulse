@@ -1,0 +1,17 @@
+name: pulse_analytics
+description: >-
+  Dart and Flutter SDK for Pulse product analytics. Track events and identify
+  users with batching, retries and an offline queue.
+version: 0.1.0
+repository: https://github.com/sulaimanmokhaniq/pulse/tree/main/packages/pulse_analytics
+topics: [analytics, flutter, events]
+
+environment:
+  sdk: ^3.5.0
+
+dependencies:
+  http: ^1.2.0
+
+dev_dependencies:
+  lints: ^6.0.0
+  test: ^1.25.6
