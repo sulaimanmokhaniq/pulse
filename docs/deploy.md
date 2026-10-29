@@ -30,11 +30,19 @@ cold start.
 
 ## 3. API key
 
-Generate the key the demo app will use:
+Generate the key the demo app will use. In a terminal (macOS or Linux, nothing to install):
+
+```bash
+echo "pk_$(openssl rand -base64 24 | tr '+/' '-_' | tr -d '=')"
+```
+
+Or, if you have Node.js:
 
 ```bash
 node -e "console.log('pk_' + require('crypto').randomBytes(24).toString('base64url'))"
 ```
+
+Copy the whole output, including `pk_`.
 
 Keep it somewhere safe. It goes into Render below and later into the demo app.
 
