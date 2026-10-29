@@ -3,6 +3,8 @@
 Product analytics and feature flags for mobile and web apps. Flutter-first,
 Arabic-ready, built to host data in Saudi Arabia.
 
+> **Live API:** [pulse-api-udhc.onrender.com/health](https://pulse-api-udhc.onrender.com/health) (free tier; the first request may take up to a minute)
+>
 > Status: Phase 1 in progress. Ingestion and storage are done; the Dart SDK
 > and trends dashboard are next.
 
@@ -123,7 +125,7 @@ npm test               # unit and e2e tests (needs Postgres and Redis)
 ## Roadmap
 
 1. ✅ Ingestion API, schema, CI
-2. ✅ Worker and storage; free-tier deploy config (Render, Neon, Upstash)
+2. ✅ Worker and storage, deployed on free tiers (Render, Neon, Upstash)
 3. Dart SDK (`track`, `identify`, batching, offline queue) and demo shop
 4. Trends chart (Next.js on Vercel)
 
