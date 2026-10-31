@@ -3,7 +3,7 @@
 Product analytics and feature flags for mobile and web apps. Flutter-first,
 Arabic-ready, built to host data in Saudi Arabia.
 
-> **Live demo:** [sulaimanmokhaniq.github.io/pulse](https://sulaimanmokhaniq.github.io/pulse/) · **Dashboard:** _(Vercel link coming)_ · **Live API:** [pulse-api-udhc.onrender.com/health](https://pulse-api-udhc.onrender.com/health) (free tier; the first request may take up to a minute)
+> **Live demo:** [sulaimanmokhaniq.github.io/pulse](https://sulaimanmokhaniq.github.io/pulse/) · **Dashboard:** [pulse-dashboard-eta-snowy.vercel.app](https://pulse-dashboard-eta-snowy.vercel.app/) · **Live API:** [pulse-api-udhc.onrender.com/health](https://pulse-api-udhc.onrender.com/health) (free tier; the first request may take up to a minute)
 >
 > Status: Phase 1 complete. Tap around the demo shop, then watch your events
 > show up in the dashboard.
