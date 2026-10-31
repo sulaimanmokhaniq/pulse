@@ -1,0 +1,50 @@
+name: Demo shop (GitHub Pages)
+
+# Publishes the Flutter demo shop at https://<owner>.github.io/pulse/,
+# sending events to the live API.
+on:
+  push:
+    branches: [main]
+    paths: ["examples/demo_shop/**", "packages/pulse_analytics/**", ".github/workflows/demo-pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: examples/demo_shop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      # PULSE_KEY is a write-only ingest key. Like any client-side analytics
+      # key it ends up in the shipped app; the secret only keeps it out of git.
+      - run: >-
+          flutter build web --release --base-href /pulse/
+          --dart-define=PULSE_HOST=${{ vars.PULSE_HOST || 'https://pulse-api-udhc.onrender.com' }}
+          --dart-define=PULSE_KEY=${{ secrets.PULSE_KEY }}
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: examples/demo_shop/build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

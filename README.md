@@ -3,7 +3,7 @@
 Product analytics and feature flags for mobile and web apps. Flutter-first,
 Arabic-ready, built to host data in Saudi Arabia.
 
-> **Live API:** [pulse-api-udhc.onrender.com/health](https://pulse-api-udhc.onrender.com/health) (free tier; the first request may take up to a minute)
+> **Live demo:** [sulaimanmokhaniq.github.io/pulse](https://sulaimanmokhaniq.github.io/pulse/) · **Live API:** [pulse-api-udhc.onrender.com/health](https://pulse-api-udhc.onrender.com/health) (free tier; the first request may take up to a minute)
 >
 > Status: Phase 1 in progress. Ingestion, storage and the Dart SDK are done;
 > the trends dashboard is next.

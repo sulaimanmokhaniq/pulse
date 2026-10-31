@@ -7,7 +7,12 @@ SDK. It sends a realistic funnel to Pulse: `app_opened`, `product_list_viewed`,
 
 ![Demo Shop](../../docs/demo-shop.png)
 
-## Run
+## Try it
+
+Open the live version at https://sulaimanmokhaniq.github.io/pulse/. It's rebuilt
+from `main` by `.github/workflows/demo-pages.yml`.
+
+## Run locally
 
 ```bash
 flutter pub get
