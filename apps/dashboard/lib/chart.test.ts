@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { columnPath, formatDay, formatTick, labelIndexes, niceTicks } from './chart';
+import { columnPath, formatAverage, formatDay, formatTick, labelIndexes, niceTicks } from './chart';
 
 describe('niceTicks', () => {
   it('rounds up to clean integer steps', () => {
@@ -40,5 +40,14 @@ describe('formatting', () => {
     expect(formatDay('2026-10-31')).toBe('Oct 31');
     expect(formatTick(2000, 5000)).toBe('2,000');
     expect(formatTick(20000, 40000)).toBe('20K');
+  });
+});
+
+describe('formatAverage', () => {
+  it('never shows a misleading zero for sparse events', () => {
+    expect(formatAverage(0, 30)).toBe('0');
+    expect(formatAverage(1, 30)).toBe('<0.1');
+    expect(formatAverage(3, 30)).toBe('0.1');
+    expect(formatAverage(905, 30)).toBe('30.2');
   });
 });

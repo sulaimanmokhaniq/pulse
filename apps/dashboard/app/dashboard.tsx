@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { formatLongDay, formatNumber } from '@/lib/chart';
+import { formatAverage, formatLongDay, formatNumber } from '@/lib/chart';
 import { parseRange, RANGES, type EventSummary, type Range, type Trend } from '@/lib/types';
 import { TrendChart } from './trend-chart';
 
@@ -186,7 +186,7 @@ export function Dashboard() {
             </div>
             <div className="tile">
               <div className="tile-label">Daily average</div>
-              <div className="tile-value">{formatNumber(Math.round((trend.total / trend.days) * 10) / 10)}</div>
+              <div className="tile-value">{formatAverage(trend.total, trend.days)}</div>
             </div>
             <div className="tile">
               <div className="tile-label">Busiest day</div>

@@ -55,3 +55,10 @@ const full = new Intl.NumberFormat('en-US');
 /** Axis ticks: in full under 10,000, compact above. */
 export const formatTick = (n: number, axisMax: number) => (axisMax >= 10_000 ? compact.format(n) : full.format(n));
 export const formatNumber = (n: number) => full.format(n);
+
+/** Average per day: one decimal, and "<0.1" rather than a misleading 0 for sparse events. */
+export function formatAverage(total: number, days: number): string {
+  if (total <= 0 || days <= 0) return '0';
+  const avg = total / days;
+  return avg < 0.1 ? '<0.1' : formatNumber(Math.round(avg * 10) / 10);
+}
