@@ -4,6 +4,7 @@ import { APP_CONFIG, AppConfig } from './config';
 import { DatabaseModule } from './db/database.module';
 import { HealthController } from './health/health.controller';
 import { IngestModule } from './ingest/ingest.module';
+import { QueryModule } from './query/query.module';
 import { RedisModule } from './redis/redis.module';
 import { WorkerModule } from './worker/worker.module';
 
@@ -24,6 +25,7 @@ export class AppModule {
         RedisModule,
         ThrottlerModule.forRoot([{ ttl: 60_000, limit: config.rateLimitPerMinute }]),
         IngestModule,
+        QueryModule,
         WorkerModule,
       ],
       controllers: [HealthController],

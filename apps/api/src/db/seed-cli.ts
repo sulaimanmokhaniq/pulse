@@ -1,7 +1,8 @@
 import { Pool } from 'pg';
 import { loadConfig } from '../config';
 import { runMigrations } from './migrate';
-import { seedProject } from './seed';
+import { generateApiKey } from '../auth/api-key';
+import { registerKey, seedProject } from './seed';
 
 async function main() {
   const pool = new Pool({ connectionString: loadConfig().databaseUrl });
@@ -14,6 +15,13 @@ async function main() {
       console.log(`new API key (shown once): ${result.apiKey}`);
     } else {
       console.log(result.created ? 'API key registered' : 'API key already registered');
+    }
+    const secretKey = process.env.SEED_SECRET_KEY || generateApiKey('secret');
+    const secretCreated = await registerKey(pool, result.projectId, secretKey, 'secret');
+    if (secretCreated && !process.env.SEED_SECRET_KEY) {
+      console.log(`new secret key for the dashboard (shown once): ${secretKey}`);
+    } else {
+      console.log(secretCreated ? 'secret key registered' : 'secret key already registered');
     }
   } finally {
     await pool.end();

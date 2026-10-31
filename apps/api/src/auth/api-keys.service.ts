@@ -1,11 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Pool } from 'pg';
 import { PG_POOL } from '../db/database.module';
-import { hashApiKey } from './api-key';
+import { hashApiKey, KeyKind } from './api-key';
 
 export interface ResolvedKey {
   keyId: string;
   projectId: string;
+  kind: KeyKind;
 }
 
 const CACHE_TTL_MS = 60_000;
@@ -23,11 +24,11 @@ export class ApiKeysService {
     const cached = this.cache.get(hash);
     if (cached && cached.expiresAt > Date.now()) return cached.value;
 
-    const { rows } = await this.pool.query<{ id: string; project_id: string }>(
-      'SELECT id, project_id FROM api_keys WHERE key_hash = $1 AND revoked_at IS NULL',
+    const { rows } = await this.pool.query<{ id: string; project_id: string; kind: KeyKind }>(
+      'SELECT id, project_id, kind FROM api_keys WHERE key_hash = $1 AND revoked_at IS NULL',
       [hash],
     );
-    const value = rows[0] ? { keyId: rows[0].id, projectId: rows[0].project_id } : null;
+    const value = rows[0] ? { keyId: rows[0].id, projectId: rows[0].project_id, kind: rows[0].kind } : null;
     this.cache.set(hash, { value, expiresAt: Date.now() + CACHE_TTL_MS });
     return value;
   }

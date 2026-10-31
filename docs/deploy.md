@@ -7,6 +7,7 @@ Phase 1 runs on free tiers only:
 | API and worker | Render (free web service) | Sleeps after ~15 min idle; first request after that takes 30 to 60 s |
 | PostgreSQL | Neon (free) | ~0.5 GB storage |
 | Redis | Upstash (free) | Monthly command quota; the worker backs off while idle to stay well inside it |
+| Dashboard | Vercel (Hobby) | Server routes call the API with the secret key |
 
 Pick Frankfurt (`eu-central-1`) for all three. It's the closest region to the
 Gulf that all three offer, and keeping them together keeps latency low.
@@ -61,6 +62,34 @@ curl https://pulse-api-xxxx.onrender.com/health
 ```
 
 Every push to `main` redeploys.
+
+## 5. Secret key for the dashboard
+
+The dashboard reads data with a secret `sk_` key. Unlike the `pk_` ingest key
+it can read everything, so it must never ship in an app or a browser.
+
+```bash
+echo "sk_$(openssl rand -base64 24 | tr '+/' '-_' | tr -d '=')"
+```
+
+In Render, open the service → **Environment** → add `SEED_SECRET_KEY` with that
+value → **Save, rebuild and deploy**. On startup the API registers it for the
+Demo Shop project. An `sk_` key is rejected by `/v1/batch`, and a `pk_` key is
+rejected by `/v1/query`.
+
+## 6. Vercel (dashboard)
+
+1. Sign up at vercel.com with GitHub.
+2. **Add New → Project**, import the `pulse` repo.
+3. Set **Root Directory** to `apps/dashboard`. Vercel detects Next.js.
+4. Under **Environment Variables** add:
+   - `PULSE_API_URL` = your Render URL, e.g. `https://pulse-api-xxxx.onrender.com`
+   - `PULSE_SECRET_KEY` = the `sk_` key from step 5
+5. Deploy.
+
+The browser only talks to the dashboard's own `/api/*` routes, which add the
+key on the server. If the API is asleep, the dashboard shows "waking up" and
+retries until Render has started it.
 
 ## Moving to paid hosting later
 

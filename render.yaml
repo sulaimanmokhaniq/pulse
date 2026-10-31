@@ -17,6 +17,8 @@ services:
         sync: false
       - key: SEED_API_KEY
         sync: false
+      - key: SEED_SECRET_KEY
+        sync: false
       - key: SEED_PROJECT_NAME
         value: Demo Shop
       - key: WORKER_MAX_IDLE_POLL_MS

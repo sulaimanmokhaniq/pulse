@@ -3,17 +3,17 @@
 Product analytics and feature flags for mobile and web apps. Flutter-first,
 Arabic-ready, built to host data in Saudi Arabia.
 
-> **Live demo:** [sulaimanmokhaniq.github.io/pulse](https://sulaimanmokhaniq.github.io/pulse/) · **Live API:** [pulse-api-udhc.onrender.com/health](https://pulse-api-udhc.onrender.com/health) (free tier; the first request may take up to a minute)
+> **Live demo:** [sulaimanmokhaniq.github.io/pulse](https://sulaimanmokhaniq.github.io/pulse/) · **Dashboard:** _(Vercel link coming)_ · **Live API:** [pulse-api-udhc.onrender.com/health](https://pulse-api-udhc.onrender.com/health) (free tier; the first request may take up to a minute)
 >
-> Status: Phase 1 in progress. Ingestion, storage and the Dart SDK are done;
-> the trends dashboard is next.
+> Status: Phase 1 complete. Tap around the demo shop, then watch your events
+> show up in the dashboard.
 
 ## Architecture (Phase 1)
 
 ```
-Flutter app ──▶ Dart SDK ──HTTP batch──▶ Ingestion API ──XADD──▶ Redis Stream ──▶ Worker ──────▶ PostgreSQL ──▶ Dashboard
-               (batching,              (API-key auth,                           (consumer     (partitioned    (Next.js,
-                offline queue)          validation, rate limit)                  group, dedup) events, daily   step 4)
+Flutter app ──▶ Dart SDK ──HTTP batch──▶ Ingestion API ──XADD──▶ Redis Stream ──▶ Worker ──────▶ PostgreSQL ──▶ Query API ──▶ Dashboard
+               (batching,              (API-key auth,                           (consumer     (partitioned    (secret key)  (Next.js)
+                offline queue)          validation, rate limit)                  group, dedup) events, daily
                                                                                                rollups)
 ```
 
@@ -25,10 +25,10 @@ event carries a `messageId`, so SDK retries and redeliveries are stored once.
 
 | Path | What it is |
 | --- | --- |
-| `apps/api` | NestJS ingestion API (TypeScript) |
+| `apps/api` | NestJS ingestion and query API (TypeScript) |
 | `packages/pulse_analytics` | Dart/Flutter SDK ([README](packages/pulse_analytics/README.md)) |
 | `examples/demo_shop` | Flutter demo shop that uses the SDK ([README](examples/demo_shop/README.md)) |
-| `apps/dashboard` | Next.js dashboard (step 4) |
+| `apps/dashboard` | Next.js trends dashboard ([README](apps/dashboard/README.md)) |
 
 ## Quick look: the SDK
 
@@ -43,6 +43,15 @@ backoff. Every event carries a `messageId`, so the server stores it exactly
 once however many times it's sent.
 
 ![Demo Shop](docs/demo-shop.png)
+
+## The dashboard
+
+Pick an event and a range (7, 30 or 90 days) to see daily counts and unique
+users. Unique users count an anonymous visitor and their signed-in account
+once. The chart works with hover, keyboard arrows, and a table view, and
+follows the system dark mode.
+
+![Dashboard](docs/dashboard.png)
 
 ## Run it locally
 
@@ -93,6 +102,17 @@ too large, `429` rate limited (per API key).
 
 `GET /health` checks Postgres and Redis.
 
+## Query API
+
+Authenticated with a secret `sk_` key. Ingest (`pk_`) keys can't read, and
+secret keys can't ingest.
+
+| Endpoint | Returns |
+| --- | --- |
+| `GET /v1/query/events` | Event names seen in the last 90 days, busiest first |
+| `GET /v1/query/trends?event=<name>&days=7\|30\|90` | Total, unique users, and a zero-filled daily series |
+
+
 ## Design decisions
 
 - **Queue before database.** Redis Streams absorb bursts and decouple
@@ -120,12 +140,15 @@ too large, `429` rate limited (per API key).
 - **Cheap when idle.** The worker backs off to one poll every 30s while idle,
   and the API nudges it when events arrive, so latency stays under a second
   without spending the free Redis command quota.
+- **Two kinds of key.** `pk_` keys ship inside apps and can only write.
+  `sk_` keys can read and stay on servers: the dashboard calls the API from
+  Next.js route handlers, so the key never reaches the browser.
 - **12-factor config.** All connections come from env vars, so the same
   Docker image runs locally, on free hosting, or on a KSA VPS.
 
 ## Deploy
 
-Free tier on Render, Neon and Upstash: see [docs/deploy.md](docs/deploy.md).
+Free tier on Render, Neon, Upstash and Vercel: see [docs/deploy.md](docs/deploy.md).
 
 ## Development
 
@@ -141,7 +164,7 @@ npm test               # unit and e2e tests (needs Postgres and Redis)
 1. ✅ Ingestion API, schema, CI
 2. ✅ Worker and storage, deployed on free tiers (Render, Neon, Upstash)
 3. ✅ Dart SDK (`track`, `identify`, batching, offline queue) and demo shop
-4. Trends chart (Next.js on Vercel)
+4. ✅ Trends dashboard (Next.js on Vercel)
 
 Later: funnels, retention, feature flags, A/B experiments, Arabic/RTL dashboard.
 

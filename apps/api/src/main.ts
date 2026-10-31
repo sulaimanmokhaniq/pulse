@@ -4,7 +4,7 @@ import { Pool } from 'pg';
 import { createApp } from './bootstrap';
 import { loadConfig } from './config';
 import { runMigrations } from './db/migrate';
-import { seedProject } from './db/seed';
+import { registerKey, seedProject } from './db/seed';
 
 async function main() {
   const config = loadConfig();
@@ -16,6 +16,11 @@ async function main() {
   if (process.env.SEED_API_KEY) {
     const seeded = await seedProject(pool, process.env.SEED_PROJECT_NAME ?? 'Demo Shop', process.env.SEED_API_KEY);
     if (seeded.created) logger.log(`seeded project ${seeded.projectId}`);
+    if (process.env.SEED_SECRET_KEY?.startsWith('sk_')) {
+      if (await registerKey(pool, seeded.projectId, process.env.SEED_SECRET_KEY, 'secret')) {
+        logger.log('registered dashboard secret key');
+      }
+    }
   }
   await pool.end();
 

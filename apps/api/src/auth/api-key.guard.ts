@@ -1,6 +1,6 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
-import { API_KEY_PREFIX } from './api-key';
+import { KeyKind, prefixFor } from './api-key';
 import { ApiKeysService, ResolvedKey } from './api-keys.service';
 
 export interface AuthedRequest extends Request {
@@ -14,18 +14,36 @@ export function extractApiKey(req: Request): string | undefined {
   return typeof alt === 'string' ? alt.trim() : undefined;
 }
 
+// @Injectable on the base emits the constructor metadata the subclasses inherit.
 @Injectable()
-export class ApiKeyGuard implements CanActivate {
+abstract class KeyGuard implements CanActivate {
+  protected abstract readonly kind: KeyKind;
+
   constructor(private readonly keys: ApiKeysService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<AuthedRequest>();
     const raw = extractApiKey(req);
-    if (!raw || !raw.startsWith(API_KEY_PREFIX)) throw new UnauthorizedException('Missing or malformed API key');
+    if (!raw || !raw.startsWith(prefixFor(this.kind))) {
+      throw new UnauthorizedException(`Missing or malformed ${this.kind} key`);
+    }
 
     const resolved = await this.keys.resolve(raw);
-    if (!resolved) throw new UnauthorizedException('Invalid API key');
+    // The prefix is only a hint; the stored kind is what grants access.
+    if (!resolved || resolved.kind !== this.kind) throw new UnauthorizedException('Invalid API key');
     req.apiKey = resolved;
     return true;
   }
+}
+
+/** Ingest keys (pk_), which client apps use to send events. */
+@Injectable()
+export class ApiKeyGuard extends KeyGuard {
+  protected readonly kind = 'ingest';
+}
+
+/** Secret keys (sk_), which servers use to read analytics. */
+@Injectable()
+export class SecretKeyGuard extends KeyGuard {
+  protected readonly kind = 'secret';
 }

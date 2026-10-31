@@ -81,4 +81,13 @@ export const migrations: Migration[] = [
       CREATE INDEX persons_project_user_idx ON persons (project_id, user_id) WHERE user_id IS NOT NULL;
     `,
   },
+  {
+    id: '003_secret_keys',
+    sql: `
+      -- 'ingest' keys (pk_) ship inside client apps and can only send events.
+      -- 'secret' keys (sk_) stay on servers and can read analytics.
+      ALTER TABLE api_keys ADD COLUMN kind text NOT NULL DEFAULT 'ingest'
+        CHECK (kind IN ('ingest', 'secret'));
+    `,
+  },
 ];
