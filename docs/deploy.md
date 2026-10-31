@@ -85,6 +85,7 @@ rejected by `/v1/query`.
 4. Under **Environment Variables** add:
    - `PULSE_API_URL` = your Render URL, e.g. `https://pulse-api-xxxx.onrender.com`
    - `PULSE_SECRET_KEY` = the `sk_` key from step 5
+   - `DASHBOARD_ADMIN_PASSWORD` (optional) = a password for creating and deleting flags
 5. Deploy.
 
 The browser only talks to the dashboard's own `/api/*` routes, which add the

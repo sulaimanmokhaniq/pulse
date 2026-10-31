@@ -11,6 +11,7 @@ class PulseConfig {
     this.maxQueueSize = 1000,
     this.maxRetryDelay = const Duration(minutes: 5),
     this.context = const {},
+    this.flagsRefreshInterval = const Duration(minutes: 5),
     this.debug = false,
   }) : storage = storage ?? MemoryStorage();
 
@@ -39,6 +40,10 @@ class PulseConfig {
 
   /// Sent with every event, e.g. `{'os': 'android', 'appVersion': '1.2.0'}`.
   final Map<String, Object?> context;
+
+  /// Re-fetch feature flags this often while the app runs. `null` fetches only
+  /// on start, after identify/reset, and when you call `reloadFlags`.
+  final Duration? flagsRefreshInterval;
 
   /// Log SDK activity with `print`.
   final bool debug;

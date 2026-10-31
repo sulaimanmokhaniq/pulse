@@ -13,7 +13,7 @@ export class PulseError extends Error {
 const TIMEOUT_MS = 55_000;
 
 /** Calls the Pulse API with the project's secret key. Server-side only. */
-export async function pulseGet<T>(path: string): Promise<T> {
+export async function pulseRequest<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
   const base = process.env.PULSE_API_URL;
   const key = process.env.PULSE_SECRET_KEY;
   if (!base || !key) throw new PulseError('Dashboard is not configured: set PULSE_API_URL and PULSE_SECRET_KEY', 500);
@@ -21,7 +21,12 @@ export async function pulseGet<T>(path: string): Promise<T> {
   let res: Response;
   try {
     res = await fetch(`${base.replace(/\/$/, '')}${path}`, {
-      headers: { Authorization: `Bearer ${key}` },
+      method: init.method ?? 'GET',
+      headers: {
+        Authorization: `Bearer ${key}`,
+        ...(init.body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      },
+      body: init.body === undefined ? undefined : JSON.stringify(init.body),
       cache: 'no-store',
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
@@ -29,9 +34,18 @@ export async function pulseGet<T>(path: string): Promise<T> {
     throw new PulseError('The Pulse API did not respond', 504);
   }
   if (res.status === 401) throw new PulseError('The Pulse API rejected the dashboard key', 502);
+  if (res.status === 404) throw new PulseError('Not found', 404);
+  if (res.status === 400) {
+    const body = await res.json().catch(() => ({}));
+    const detail = Array.isArray(body.message) ? body.message.join('; ') : body.message;
+    throw new PulseError(detail ? `Invalid request: ${detail}` : 'Invalid request', 400);
+  }
   if (!res.ok) throw new PulseError(`The Pulse API returned ${res.status}`, res.status >= 500 ? 503 : 502);
+  if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
+export const pulseGet = <T>(path: string) => pulseRequest<T>(path);
 
 export function errorResponse(err: unknown): Response {
   const status = err instanceof PulseError ? err.status : 500;

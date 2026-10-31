@@ -2,6 +2,7 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_CONFIG, AppConfig } from './config';
 import { DatabaseModule } from './db/database.module';
+import { FlagsModule } from './flags/flags.module';
 import { HealthController } from './health/health.controller';
 import { IngestModule } from './ingest/ingest.module';
 import { QueryModule } from './query/query.module';
@@ -26,6 +27,7 @@ export class AppModule {
         ThrottlerModule.forRoot([{ ttl: 60_000, limit: config.rateLimitPerMinute }]),
         IngestModule,
         QueryModule,
+        FlagsModule,
         WorkerModule,
       ],
       controllers: [HealthController],

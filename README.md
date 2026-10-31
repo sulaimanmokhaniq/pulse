@@ -5,8 +5,10 @@ Arabic-ready, built to host data in Saudi Arabia.
 
 > **Live demo:** [sulaimanmokhaniq.github.io/pulse](https://sulaimanmokhaniq.github.io/pulse/) · **Dashboard:** [pulse-dashboard-eta-snowy.vercel.app](https://pulse-dashboard-eta-snowy.vercel.app/) · **Live API:** [pulse-api-udhc.onrender.com/health](https://pulse-api-udhc.onrender.com/health) (free tier; the first request may take up to a minute)
 >
-> Status: Phase 1 complete. Tap around the demo shop, then watch your events
-> show up in the dashboard.
+> Status: Phase 1 complete, feature flags added. Tap around the demo shop, then
+> watch your events show up in the dashboard, or switch the `promo_banner` flag
+> on the [Feature flags](https://pulse-dashboard-eta-snowy.vercel.app/flags) page
+> and see the shop change.
 
 ## Architecture (Phase 1)
 
@@ -25,10 +27,10 @@ event carries a `messageId`, so SDK retries and redeliveries are stored once.
 
 | Path | What it is |
 | --- | --- |
-| `apps/api` | NestJS ingestion and query API (TypeScript) |
+| `apps/api` | NestJS API: ingestion, queries and feature flags (TypeScript) |
 | `packages/pulse_analytics` | Dart/Flutter SDK ([README](packages/pulse_analytics/README.md)) |
 | `examples/demo_shop` | Flutter demo shop that uses the SDK ([README](examples/demo_shop/README.md)) |
-| `apps/dashboard` | Next.js trends dashboard ([README](apps/dashboard/README.md)) |
+| `apps/dashboard` | Next.js dashboard: trends and feature flags ([README](apps/dashboard/README.md)) |
 
 ## Quick look: the SDK
 
@@ -36,6 +38,8 @@ event carries a `messageId`, so SDK retries and redeliveries are stored once.
 final pulse = await Pulse.init(PulseConfig(apiKey: 'pk_...', host: 'https://...'));
 pulse.track('product_viewed', properties: {'productId': 'sku-1'});
 pulse.identify('user-42', traits: {'plan': 'pro'});
+
+if (pulse.isEnabled('new_checkout')) showNewCheckout();
 ```
 
 Events are batched, persisted to disk while offline, and retried with
@@ -52,6 +56,27 @@ once. The chart works with hover, keyboard arrows, and a table view, and
 follows the system dark mode.
 
 ![Dashboard](docs/dashboard.png)
+
+## Feature flags
+
+Turn a feature on for everyone, nobody, or a percentage of users, from the
+dashboard, without shipping a new app version.
+
+- **Sticky rollouts.** Each user's bucket is a hash of the flag key and their
+  id, so they keep the same answer, raising the percentage only adds users,
+  and different flags pick different users.
+- **Fast and offline-safe on device.** The SDK fetches every flag for the user
+  in one request and caches the result, so `isEnabled` never waits on the
+  network.
+- **Measurable.** The first read of a flag records `$feature_flag_called`
+  with the value, ready for comparing the two groups.
+- **Safe keys.** Apps evaluate flags with the write-only `pk_` key; changing
+  them needs the `sk_` key, which only the dashboard server holds.
+
+In the demo, anyone can switch a flag or move its rollout. Creating and
+deleting flags needs an admin password.
+
+![Feature flags](docs/flags.png)
 
 ## Run it locally
 
@@ -112,6 +137,16 @@ secret keys can't ingest.
 | `GET /v1/query/events` | Event names seen in the last 90 days, busiest first |
 | `GET /v1/query/trends?event=<name>&days=7\|30\|90` | Total, unique users, and a zero-filled daily series |
 
+## Flags API
+
+| Endpoint | Key | Does |
+| --- | --- | --- |
+| `POST /v1/flags/evaluate` `{distinctId}` | `pk_` | Every flag resolved to `true`/`false` for that user |
+| `GET /v1/flags` | `sk_` | List flags |
+| `PUT /v1/flags/:key` `{enabled, rolloutPercent, description?}` | `sk_` | Create or replace a flag |
+| `PATCH /v1/flags/:key` | `sk_` | Change some settings |
+| `DELETE /v1/flags/:key` | `sk_` | Delete a flag |
+
 
 ## Design decisions
 
@@ -165,8 +200,9 @@ npm test               # unit and e2e tests (needs Postgres and Redis)
 2. ✅ Worker and storage, deployed on free tiers (Render, Neon, Upstash)
 3. ✅ Dart SDK (`track`, `identify`, batching, offline queue) and demo shop
 4. ✅ Trends dashboard (Next.js on Vercel)
+5. ✅ Feature flags with percentage rollouts, in the API, SDK, dashboard and demo shop
 
-Later: funnels, retention, feature flags, A/B experiments, Arabic/RTL dashboard.
+Later: funnels and retention (with flag comparisons), A/B experiments, dashboard login and multiple projects, Arabic/RTL dashboard.
 
 ## License
 

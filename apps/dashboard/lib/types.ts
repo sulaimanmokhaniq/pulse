@@ -27,3 +27,11 @@ export function parseRange(value: string | null | undefined): Range {
   const n = Number(value);
   return (RANGES as readonly number[]).includes(n) ? (n as Range) : 30;
 }
+
+export interface Flag {
+  key: string;
+  description: string;
+  enabled: boolean;
+  rolloutPercent: number;
+  updatedAt: string;
+}

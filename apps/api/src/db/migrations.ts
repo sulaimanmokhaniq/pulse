@@ -90,4 +90,22 @@ export const migrations: Migration[] = [
         CHECK (kind IN ('ingest', 'secret'));
     `,
   },
+  {
+    id: '004_feature_flags',
+    sql: `
+      -- Boolean flags with a percentage rollout. A user is in the rollout when
+      -- their stable bucket (hash of flag key and distinct id, 0-99.99) is below
+      -- rollout_percent, so raising the percentage only ever adds users.
+      CREATE TABLE feature_flags (
+        project_id       uuid NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+        key              text NOT NULL,
+        description      text NOT NULL DEFAULT '',
+        enabled          boolean NOT NULL DEFAULT false,
+        rollout_percent  integer NOT NULL DEFAULT 100 CHECK (rollout_percent BETWEEN 0 AND 100),
+        created_at       timestamptz NOT NULL DEFAULT now(),
+        updated_at       timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (project_id, key)
+      );
+    `,
+  },
 ];

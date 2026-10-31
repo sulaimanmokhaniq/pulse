@@ -129,6 +129,13 @@ class _ShopScreenState extends State<ShopScreen> {
       ),
       body: Column(
         children: [
+          // Toggle or re-target this flag in the Pulse dashboard; the banner
+          // follows within the SDK's refresh interval, no app release needed.
+          StreamBuilder<Map<String, bool>>(
+            stream: pulse.onFlagsChanged,
+            initialData: pulse.flags,
+            builder: (context, _) => pulse.isEnabled('promo_banner') ? const _PromoBanner() : const SizedBox.shrink(),
+          ),
           if (_user != null)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -145,6 +152,38 @@ class _ShopScreenState extends State<ShopScreen> {
               ),
               itemCount: catalog.length,
               itemBuilder: (context, i) => _ProductCard(product: catalog[i]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PromoBanner extends StatelessWidget {
+  const _PromoBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(12)),
+      child: Row(
+        children: [
+          Icon(Icons.local_shipping_outlined, color: scheme.onPrimaryContainer),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Free shipping on every order this week',
+                    style: TextStyle(fontWeight: FontWeight.w600, color: scheme.onPrimaryContainer)),
+                Text('Shown by the promo_banner feature flag',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: scheme.onPrimaryContainer)),
+              ],
             ),
           ),
         ],

@@ -5,6 +5,11 @@ SDK. It sends a realistic funnel to Pulse: `app_opened`, `product_list_viewed`,
 `product_viewed`, `added_to_cart`, `cart_viewed`, `checkout_started` and
 `purchase_completed`, plus `identify` on sign-in and `reset` on sign-out.
 
+The free-shipping banner on the home screen is controlled by the `promo_banner`
+feature flag. Switch it or change its rollout on the dashboard's
+[Feature flags](https://pulse-dashboard-eta-snowy.vercel.app/flags) page and the
+app follows within about 15 seconds.
+
 ![Demo Shop](../../docs/demo-shop.png)
 
 ## Try it

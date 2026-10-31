@@ -28,6 +28,8 @@ Future<void> initAnalytics({PulseStorage? storage, http.Client? client}) async {
         host: _host,
         storage: storage,
         flushAt: 10,
+        // Short so flag changes made in the dashboard show up quickly in the demo.
+        flagsRefreshInterval: const Duration(seconds: 15),
         context: {
           'os': kIsWeb ? 'web' : defaultTargetPlatform.name,
           'appVersion': '1.0.0',

@@ -1,7 +1,7 @@
 # pulse_analytics
 
 Dart and Flutter SDK for [Pulse](https://github.com/sulaimanmokhaniq/pulse),
-a product analytics platform.
+a product analytics and feature flags platform.
 
 - `track` and `identify` with a persistent anonymous id
 - Batching (up to 100 events per request) on a size or time trigger
@@ -9,13 +9,14 @@ a product analytics platform.
 - Retries with exponential backoff and jitter; invalid batches are dropped, not retried forever
 - Idempotent: every event carries a `messageId`, so retries are never double counted
 - Never throws and never blocks your UI on the network
+- Feature flags with percentage rollouts, cached on device so they work offline
 - Pure Dart core, no Flutter dependency; works in Flutter, CLI and server apps
 
 ## Install
 
 ```yaml
 dependencies:
-  pulse_analytics: ^0.1.0
+  pulse_analytics: ^0.2.0
 ```
 
 ## Use
@@ -47,6 +48,35 @@ await pulse.flush();
 
 On Flutter web, use `MemoryStorage()` instead of `FileStorage`.
 
+## Feature flags
+
+```dart
+if (pulse.isEnabled('new_checkout')) {
+  showNewCheckout();
+}
+```
+
+Flags are fetched on start, after `identify` and `reset`, and every
+`flagsRefreshInterval`. The last result is cached on device for that user, so
+`isEnabled` answers instantly, also offline and on a cold start. Unknown flags
+return `defaultValue` (false unless you pass one).
+
+To rebuild UI when a flag changes in the dashboard, listen to `onFlagsChanged`:
+
+```dart
+StreamBuilder<Map<String, bool>>(
+  stream: pulse.onFlagsChanged,
+  initialData: pulse.flags,
+  builder: (context, _) => pulse.isEnabled('promo_banner') ? const PromoBanner() : const SizedBox.shrink(),
+)
+```
+
+The first time each flag is read for a user, the SDK tracks
+`$feature_flag_called` with `{flag, enabled}`, so analytics can compare people
+who got each value. Rollouts are sticky: the server buckets users by a hash of
+the flag key and their distinct id, so the same user keeps the same answer and
+raising the percentage only adds users.
+
 ## Configuration
 
 | Option | Default | |
@@ -57,6 +87,7 @@ On Flutter web, use `MemoryStorage()` instead of `FileStorage`.
 | `maxQueueSize` | 1000 | Oldest events are dropped beyond this |
 | `maxRetryDelay` | 5 min | Cap for exponential backoff |
 | `context` | `{}` | Sent with every event |
+| `flagsRefreshInterval` | 5 min | Re-fetch flags this often; `null` turns periodic fetches off |
 | `debug` | false | Log activity |
 
 ## How delivery works

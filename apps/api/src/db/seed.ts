@@ -30,3 +30,13 @@ export async function registerKey(pool: Pool, projectId: string, key: string, ki
   );
   return inserted.rowCount === 1;
 }
+
+/** The demo shop's flag. Created once; later changes made in the dashboard are kept. */
+export async function seedDemoFlags(pool: Pool, projectId: string): Promise<void> {
+  await pool.query(
+    `INSERT INTO feature_flags (project_id, key, description, enabled, rollout_percent)
+     VALUES ($1, 'promo_banner', 'Free-shipping banner on the demo shop home screen', true, 50)
+     ON CONFLICT (project_id, key) DO NOTHING`,
+    [projectId],
+  );
+}

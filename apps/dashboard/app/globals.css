@@ -417,3 +417,261 @@ select {
     grid-template-columns: 1fr;
   }
 }
+
+/* Section tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--grid);
+  margin: -8px 0 20px;
+}
+
+.tab {
+  padding: 8px 12px;
+  margin-bottom: -1px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 14px;
+  border-bottom: 2px solid transparent;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab-on {
+  color: var(--text-primary);
+  font-weight: 600;
+  border-bottom-color: var(--series-1);
+}
+
+/* Feature flags */
+.lede {
+  color: var(--text-secondary);
+  max-width: 70ch;
+  line-height: 1.5;
+  margin: 0 0 16px;
+}
+
+.flag-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 12px;
+}
+
+.flag {
+  padding: 16px;
+}
+
+.flag-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.flag-key {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.flag-desc {
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.switch {
+  flex: none;
+  position: relative;
+  width: 44px;
+  height: 26px;
+  border-radius: 13px;
+  border: 0;
+  padding: 0;
+  background: var(--grid);
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+.switch:focus-visible,
+.rollout input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  transition: transform 150ms;
+}
+
+.switch-on {
+  background: var(--series-1);
+}
+
+.switch-on .switch-thumb {
+  transform: translateX(18px);
+}
+
+.rollout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.rollout-off {
+  opacity: 0.55;
+}
+
+.rollout-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  width: 56px;
+}
+
+.rollout input {
+  flex: 1;
+  min-width: 0;
+  height: 6px;
+  appearance: none;
+  border-radius: 3px;
+  background: linear-gradient(to right, var(--series-1) var(--fill), var(--grid) var(--fill));
+  cursor: pointer;
+}
+
+.rollout input::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface-1);
+  border: 2px solid var(--series-1);
+}
+
+.rollout input::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--surface-1);
+  border: 2px solid var(--series-1);
+}
+
+.rollout-value {
+  width: 44px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.flag-foot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.audience {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.audience-on {
+  color: var(--text-primary);
+}
+
+.flag-meta {
+  color: var(--text-muted);
+}
+
+.flag-error {
+  color: var(--danger-text);
+}
+
+.link-button {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--danger-text);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.footnote {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 16px 0;
+  max-width: 70ch;
+}
+
+.admin {
+  padding: 12px 16px;
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.admin summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.field input {
+  font: inherit;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: var(--surface-0);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.create-form {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.field-grow {
+  flex: 1;
+  min-width: 200px;
+}
+
+.button-primary {
+  background: var(--series-1);
+  border-color: transparent;
+  color: #fff;
+}
+
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.admin-message {
+  margin: 12px 0 0;
+  color: var(--text-secondary);
+}

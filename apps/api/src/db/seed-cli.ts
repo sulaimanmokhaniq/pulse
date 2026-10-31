@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { loadConfig } from '../config';
 import { runMigrations } from './migrate';
 import { generateApiKey } from '../auth/api-key';
-import { registerKey, seedProject } from './seed';
+import { registerKey, seedDemoFlags, seedProject } from './seed';
 
 async function main() {
   const pool = new Pool({ connectionString: loadConfig().databaseUrl });
@@ -11,6 +11,7 @@ async function main() {
     const name = process.env.SEED_PROJECT_NAME ?? 'Demo Shop';
     const result = await seedProject(pool, name, process.env.SEED_API_KEY || undefined);
     console.log(`project "${name}" ${result.projectId}`);
+    await seedDemoFlags(pool, result.projectId);
     if (result.created && !process.env.SEED_API_KEY) {
       console.log(`new API key (shown once): ${result.apiKey}`);
     } else {

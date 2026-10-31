@@ -4,31 +4,13 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatAverage, formatLongDay, formatNumber } from '@/lib/chart';
 import { parseRange, RANGES, type EventSummary, type Range, type Trend } from '@/lib/types';
+import { getJson } from '@/lib/client';
+import { DEMO_SHOP_URL, SiteHeader } from './site-header';
 import { TrendChart } from './trend-chart';
 
-const DEMO_SHOP_URL = 'https://sulaimanmokhaniq.github.io/pulse/';
 const WAKING_AFTER_MS = 3_000;
-const RETRIES = 3;
 
 type Status = 'loading' | 'waking' | 'ready' | 'error';
-
-/** Fetches through the dashboard's own API routes, retrying while a cold API wakes up. */
-async function getJson<T>(url: string): Promise<T> {
-  let lastError = 'Request failed';
-  for (let attempt = 0; attempt < RETRIES; attempt++) {
-    try {
-      const res = await fetch(url, { cache: 'no-store' });
-      const body = await res.json().catch(() => ({}));
-      if (res.ok) return body as T;
-      lastError = body.error ?? `Request failed (${res.status})`;
-      if (res.status < 500) break; // a client error won't fix itself
-    } catch {
-      lastError = 'Network error';
-    }
-    await new Promise((r) => setTimeout(r, 2_000));
-  }
-  throw new Error(lastError);
-}
 
 // Internal events like $identify are listed, but never picked by default.
 const defaultEvent = (events: EventSummary[]) => (events.find((e) => !e.event.startsWith('$')) ?? events[0])?.event;
@@ -97,23 +79,7 @@ export function Dashboard() {
 
   return (
     <main className="page">
-      <header className="header">
-        <div>
-          <div className="brand">
-            <span className="brand-mark" aria-hidden="true" />
-            Pulse
-          </div>
-          <p className="subtitle">Demo Shop project · live data</p>
-        </div>
-        <nav className="links">
-          <a href={DEMO_SHOP_URL} target="_blank" rel="noreferrer">
-            Open demo shop
-          </a>
-          <a href="https://github.com/sulaimanmokhaniq/pulse" target="_blank" rel="noreferrer">
-            GitHub
-          </a>
-        </nav>
-      </header>
+      <SiteHeader />
 
       <div className="filters" role="toolbar" aria-label="Filters">
         <div className="segmented" role="radiogroup" aria-label="Date range">

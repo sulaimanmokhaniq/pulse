@@ -12,11 +12,21 @@ import 'package:test/test.dart';
 class FakeApi {
   final batches = <List<Map<String, dynamic>>>[];
   final requests = <http.Request>[];
+  final flagRequests = <http.Request>[];
   int status = 202;
   bool offline = false;
 
+  /// Flags returned for each distinct id; ids not listed get [defaultFlags].
+  final flagsFor = <String, Map<String, bool>>{};
+  Map<String, bool> defaultFlags = {};
+
   late final client = MockClient((request) async {
     if (offline) throw const SocketException('offline');
+    if (request.url.path == '/v1/flags/evaluate') {
+      flagRequests.add(request);
+      final id = (jsonDecode(request.body) as Map<String, dynamic>)['distinctId'] as String;
+      return http.Response(jsonEncode({'flags': flagsFor[id] ?? defaultFlags}), 200);
+    }
     requests.add(request);
     final body = jsonDecode(request.body) as Map<String, dynamic>;
     if (status >= 200 && status < 300) {
@@ -168,6 +178,7 @@ void main() {
     final gate = Completer<void>();
     var calls = 0;
     final client = MockClient((request) async {
+      if (request.url.path != '/v1/batch') return http.Response('{"flags":{}}', 200);
       calls++;
       await gate.future;
       return http.Response('{}', 202);
@@ -193,5 +204,90 @@ void main() {
     await File('${dir.path}/pulse_queue.json').writeAsString('{not json');
     final pulse = await Pulse.init(config(FileStorage(dir)), client: api.client);
     expect(pulse.queueLength, 0);
+  });
+
+  group('feature flags', () {
+    test('fetches flags on init for the current user', () async {
+      api.defaultFlags = {'new_checkout': true, 'promo': false};
+      final pulse = await Pulse.init(config(storage), client: api.client);
+      await pulse.reloadFlags();
+
+      final req = api.flagRequests.first;
+      expect(req.url.toString(), 'https://api.test/v1/flags/evaluate');
+      expect(req.headers['Authorization'], 'Bearer pk_test');
+      expect(jsonDecode(req.body), {'distinctId': pulse.anonymousId});
+      expect(pulse.flags, {'new_checkout': true, 'promo': false});
+      expect(pulse.isEnabled('new_checkout'), isTrue);
+      expect(pulse.isEnabled('promo'), isFalse);
+    });
+
+    test('unknown flags fall back to the default', () async {
+      final pulse = await Pulse.init(config(storage), client: api.client);
+      await pulse.reloadFlags();
+      expect(pulse.isEnabled('missing'), isFalse);
+      expect(pulse.isEnabled('missing', defaultValue: true), isTrue);
+    });
+
+    test('records one exposure event per flag value', () async {
+      api.defaultFlags = {'new_checkout': true};
+      final pulse = await Pulse.init(config(storage), client: api.client);
+      await pulse.reloadFlags();
+      for (var i = 0; i < 5; i++) {
+        pulse.isEnabled('new_checkout');
+      }
+      pulse.isEnabled('missing'); // unknown flags aren't exposures
+      await pulse.flush();
+
+      final exposures = api.events.where((e) => e['event'] == flagExposureEvent).toList();
+      expect(exposures.length, 1);
+      expect(exposures.single['properties'], {'flag': 'new_checkout', 'enabled': true});
+    });
+
+    test('serves cached flags offline on the next launch', () async {
+      api.defaultFlags = {'new_checkout': true};
+      final first = await Pulse.init(config(storage), client: api.client);
+      await first.reloadFlags();
+      await first.close();
+
+      final offlineApi = FakeApi()..offline = true;
+      final second = await Pulse.init(config(storage), client: offlineApi.client);
+      expect(second.isEnabled('new_checkout'), isTrue);
+      await second.reloadFlags(); // fails quietly, keeps the cache
+      expect(second.isEnabled('new_checkout'), isTrue);
+    });
+
+    test('re-fetches after identify and does not reuse another user\'s cache', () async {
+      final pulse = await Pulse.init(config(storage), client: api.client);
+      api.flagsFor['user-42'] = {'beta': true};
+      await pulse.reloadFlags();
+      expect(pulse.isEnabled('beta'), isFalse);
+
+      pulse.identify('user-42');
+      await pulse.reloadFlags();
+      expect(pulse.isEnabled('beta'), isTrue);
+      expect(jsonDecode(api.flagRequests.last.body), {'distinctId': 'user-42'});
+
+      pulse.reset();
+      expect(pulse.flags, {'beta': true}); // until the fetch for the new id lands
+      await pulse.reloadFlags();
+      expect(pulse.isEnabled('beta'), isFalse);
+    });
+
+    test('emits on onFlagsChanged only when flags change', () async {
+      api.defaultFlags = {'a': true};
+      final pulse = await Pulse.init(config(storage), client: api.client);
+      final seen = <Map<String, bool>>[];
+      final sub = pulse.onFlagsChanged.listen(seen.add);
+      await pulse.reloadFlags();
+      await pulse.reloadFlags();
+      api.defaultFlags = {'a': false};
+      await pulse.reloadFlags();
+      await Future<void>.delayed(Duration.zero);
+      await sub.cancel();
+      expect(seen, [
+        {'a': true},
+        {'a': false},
+      ]);
+    });
   });
 }
