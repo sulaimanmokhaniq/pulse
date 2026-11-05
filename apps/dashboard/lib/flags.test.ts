@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { checkAdmin, FLAG_KEY_PATTERN, parseFlagChanges, parseNewFlag } from './flags';
 import { audience, timeAgo } from './time';
+
+vi.mock('server-only', () => ({}));
 
 describe('parseFlagChanges', () => {
   it('keeps only enabled and rolloutPercent', () => {
@@ -67,5 +69,12 @@ describe('labels', () => {
     expect(timeAgo('2026-10-31T11:59:40Z', now)).toBe('just now');
     expect(timeAgo('2026-10-31T11:55:00Z', now)).toBe('5 minutes ago');
     expect(timeAgo('2026-10-30T12:00:00Z', now)).toBe('yesterday');
+  });
+});
+
+describe('simulated project key', () => {
+  it('matches the API derivation (shared vector)', async () => {
+    const { simulatedSecretKey } = await import('./simulated-key');
+    expect(simulatedSecretKey('sk_test_vector')).toBe('sk_g3h5AezK7kjSuiMYlCP0hjEBmPnKPx8v');
   });
 });

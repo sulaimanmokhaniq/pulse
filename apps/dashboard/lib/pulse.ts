@@ -1,4 +1,6 @@
 import 'server-only';
+import { simulatedSecretKey } from './simulated-key';
+import type { Source } from './types';
 
 export class PulseError extends Error {
   constructor(
@@ -13,11 +15,15 @@ export class PulseError extends Error {
 const TIMEOUT_MS = 55_000;
 
 /** Calls the Pulse API with the project's secret key. Server-side only. */
-export async function pulseRequest<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
+export async function pulseRequest<T>(
+  path: string,
+  init: { method?: string; body?: unknown; source?: Source } = {},
+): Promise<T> {
   const base = process.env.PULSE_API_URL;
-  const key = process.env.PULSE_SECRET_KEY;
-  if (!base || !key) throw new PulseError('Dashboard is not configured: set PULSE_API_URL and PULSE_SECRET_KEY', 500);
+  const liveKey = process.env.PULSE_SECRET_KEY;
+  if (!base || !liveKey) throw new PulseError('Dashboard is not configured: set PULSE_API_URL and PULSE_SECRET_KEY', 500);
 
+  const key = init.source === 'simulated' ? simulatedSecretKey(liveKey) : liveKey;
   let res: Response;
   try {
     res = await fetch(`${base.replace(/\/$/, '')}${path}`, {
@@ -45,7 +51,7 @@ export async function pulseRequest<T>(path: string, init: { method?: string; bod
   return (await res.json()) as T;
 }
 
-export const pulseGet = <T>(path: string) => pulseRequest<T>(path);
+export const pulseGet = <T>(path: string, source: Source = 'live') => pulseRequest<T>(path, { source });
 
 export function errorResponse(err: unknown): Response {
   const status = err instanceof PulseError ? err.status : 500;

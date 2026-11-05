@@ -51,7 +51,11 @@ once however many times it's sent.
 ## The dashboard
 
 Pick an event and a range (7, 30 or 90 days) to see daily counts and unique
-users. Unique users count an anonymous visitor and their signed-in account
+users. It opens on **simulated** traffic, clearly labelled, so there's always
+something to explore: a generator in the API keeps a separate project filled
+with realistic demo-shop sessions (weekly rhythm, the same funnel, and the
+`promo_banner` flag at 50%). Switch to **Live** for real events from the demo
+shop. The two never mix. Unique users count an anonymous visitor and their signed-in account
 once. The chart works with hover, keyboard arrows, and a table view, and
 follows the system dark mode.
 

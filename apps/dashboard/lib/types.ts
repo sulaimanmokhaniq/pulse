@@ -28,6 +28,14 @@ export function parseRange(value: string | null | undefined): Range {
   return (RANGES as readonly number[]).includes(n) ? (n as Range) : 30;
 }
 
+/** Which project the Trends page reads: generated demo traffic, or real events from the demo shop. */
+export const SOURCES = ['simulated', 'live'] as const;
+export type Source = (typeof SOURCES)[number];
+
+export function parseSource(value: string | null | undefined): Source {
+  return value === 'live' ? 'live' : 'simulated';
+}
+
 export interface Flag {
   key: string;
   description: string;

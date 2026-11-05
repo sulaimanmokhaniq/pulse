@@ -77,6 +77,12 @@ value → **Save, rebuild and deploy**. On startup the API registers it for the
 Demo Shop project. An `sk_` key is rejected by `/v1/batch`, and a `pk_` key is
 rejected by `/v1/query`.
 
+With this key set, the API also keeps a separate "Demo Shop (simulated)"
+project filled with about 90 days of generated traffic, so the dashboard isn't
+empty. It writes straight to Postgres (no Redis commands), keeps the last 95
+days only, and the dashboard reads it with a key derived from this one, so
+there's nothing else to configure. Set `SIMULATE_TRAFFIC=false` to turn it off.
+
 ## 6. Vercel (dashboard)
 
 1. Sign up at vercel.com with GitHub.

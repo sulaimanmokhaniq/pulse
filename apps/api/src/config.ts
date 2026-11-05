@@ -9,6 +9,8 @@ export interface AppConfig {
   rateLimitPerMinute: number;
   maxBodyBytes: string;
   worker: WorkerConfig;
+  /** Set to keep a separate project filled with simulated demo traffic. */
+  simulation?: { liveSecretKey: string };
 }
 
 export interface WorkerConfig {
@@ -38,6 +40,11 @@ export function loadConfig(): AppConfig {
     streamMaxLen: Number(process.env.STREAM_MAXLEN ?? 100_000),
     rateLimitPerMinute: Number(process.env.RATE_LIMIT_PER_MINUTE ?? 600),
     maxBodyBytes: process.env.MAX_BODY_BYTES ?? '512kb',
+    // On whenever the dashboard's secret key is seeded, unless turned off.
+    simulation:
+      process.env.SEED_SECRET_KEY?.startsWith('sk_') && process.env.SIMULATE_TRAFFIC !== 'false'
+        ? { liveSecretKey: process.env.SEED_SECRET_KEY }
+        : undefined,
     worker: {
       // Runs inside the API process by default so a single free web service is enough.
       enabled: (process.env.WORKER_ENABLED ?? 'true') !== 'false',

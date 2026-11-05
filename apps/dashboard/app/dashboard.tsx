@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { formatAverage, formatLongDay, formatNumber } from '@/lib/chart';
-import { parseRange, RANGES, type EventSummary, type Range, type Trend } from '@/lib/types';
+import { parseRange, parseSource, RANGES, type EventSummary, type Range, type Source, type Trend } from '@/lib/types';
 import { getJson } from '@/lib/client';
 import { DEMO_SHOP_URL, SiteHeader } from './site-header';
 import { TrendChart } from './trend-chart';
@@ -20,6 +20,7 @@ export function Dashboard() {
   const pathname = usePathname();
   const params = useSearchParams();
   const days = parseRange(params.get('days'));
+  const source = parseSource(params.get('data'));
   const requestedEvent = params.get('event');
 
   const [events, setEvents] = useState<EventSummary[] | null>(null);
@@ -34,8 +35,9 @@ export function Dashboard() {
   const event = events && (requestedEvent && events.some((e) => e.event === requestedEvent) ? requestedEvent : defaultEvent(events));
 
   const setQuery = useCallback(
-    (next: { event?: string; days?: Range }) => {
+    (next: { event?: string; days?: Range; data?: Source }) => {
       const qs = new URLSearchParams(params);
+      if (next.data) qs.set('data', next.data);
       if (next.event) qs.set('event', next.event);
       if (next.days) qs.set('days', String(next.days));
       router.replace(`${pathname}?${qs}`, { scroll: false });
@@ -65,23 +67,38 @@ export function Dashboard() {
   }, []);
 
   useEffect(() => {
-    track(() => getJson<{ events: EventSummary[] }>('/api/events')).then((res) => res && setEvents(res.events));
-  }, [track, eventsAttempt]);
+    setEvents(null);
+    setTrend(null);
+    track(() => getJson<{ events: EventSummary[] }>(`/api/events?data=${source}`)).then((res) => res && setEvents(res.events));
+  }, [track, eventsAttempt, source]);
 
   useEffect(() => {
     if (!event) return;
-    const qs = new URLSearchParams({ event, days: String(days) });
+    const qs = new URLSearchParams({ event, days: String(days), data: source });
     track(() => getJson<Trend>(`/api/trends?${qs}`)).then((res) => res && setTrend(res));
-  }, [event, days, track, trendAttempt]);
+  }, [event, days, source, track, trendAttempt]);
 
   const busiest = trend?.series.reduce((best, p) => (p.count > best.count ? p : best), trend.series[0]);
   const stale = status === 'loading' || status === 'waking';
 
   return (
     <main className="page">
-      <SiteHeader />
+      <SiteHeader subtitle={source === 'simulated' ? 'Demo Shop project · simulated traffic' : 'Demo Shop project · live data'} />
 
       <div className="filters" role="toolbar" aria-label="Filters">
+        <div className="segmented" role="radiogroup" aria-label="Data">
+          {(['simulated', 'live'] as const).map((s) => (
+            <button
+              key={s}
+              role="radio"
+              aria-checked={s === source}
+              className={s === source ? 'segment segment-on' : 'segment'}
+              onClick={() => setQuery({ data: s })}
+            >
+              {s === 'simulated' ? 'Simulated' : 'Live'}
+            </button>
+          ))}
+        </div>
         <div className="segmented" role="radiogroup" aria-label="Date range">
           {RANGES.map((r) => (
             <button
@@ -121,6 +138,20 @@ export function Dashboard() {
             Try again
           </button>
         </div>
+      )}
+
+      {source === 'simulated' && (
+        <p className="sim-note">
+          <span className="sim-badge">Simulated</span>
+          <span>
+            Generated traffic that mimics the demo shop, so there&apos;s always something to explore. For real events,
+            switch to{' '}
+            <button className="inline-link" onClick={() => setQuery({ data: 'live' })}>
+              Live
+            </button>
+            .
+          </span>
+        </p>
       )}
 
       {events && events.length === 0 && (
@@ -194,8 +225,9 @@ export function Dashboard() {
       )}
 
       <footer className="footer">
-        Events flow from the demo shop through the Pulse Dart SDK, ingestion API, Redis Streams and a worker into
-        Postgres. Unique users count an anonymous visitor and their signed-in account once.
+        Live events flow from the demo shop through the Pulse Dart SDK, ingestion API, Redis Streams and a worker into
+        Postgres. Simulated traffic is kept in its own project and never mixed with live data. Unique users count an
+        anonymous visitor and their signed-in account once.
       </footer>
     </main>
   );

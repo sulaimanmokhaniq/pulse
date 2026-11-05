@@ -21,5 +21,8 @@ services:
         sync: false
       - key: SEED_PROJECT_NAME
         value: Demo Shop
+      # Keeps a separate "simulated" project filled for the public dashboard.
+      - key: SIMULATE_TRAFFIC
+        value: "true"
       - key: WORKER_MAX_IDLE_POLL_MS
         value: "30000"

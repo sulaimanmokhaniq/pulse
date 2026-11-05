@@ -10,7 +10,7 @@ const TABS = [
   { href: '/flags', label: 'Feature flags' },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({ subtitle = 'Demo Shop project · live data' }: { subtitle?: string }) {
   const pathname = usePathname();
   return (
     <>
@@ -20,7 +20,7 @@ export function SiteHeader() {
             <span className="brand-mark" aria-hidden="true" />
             Pulse
           </div>
-          <p className="subtitle">Demo Shop project · live data</p>
+          <p className="subtitle">{subtitle}</p>
         </div>
         <nav className="links" aria-label="External">
           <a href={DEMO_SHOP_URL} target="_blank" rel="noreferrer">

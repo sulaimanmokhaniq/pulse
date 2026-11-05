@@ -7,6 +7,7 @@ import { HealthController } from './health/health.controller';
 import { IngestModule } from './ingest/ingest.module';
 import { QueryModule } from './query/query.module';
 import { RedisModule } from './redis/redis.module';
+import { SimulationModule } from './simulation/simulation.module';
 import { WorkerModule } from './worker/worker.module';
 
 @Module({})
@@ -29,6 +30,7 @@ export class AppModule {
         QueryModule,
         FlagsModule,
         WorkerModule,
+        SimulationModule,
       ],
       controllers: [HealthController],
     };
